@@ -165,6 +165,8 @@
     margin-top: 10px;
   }
 
+  #qrReaderSmall video { transform: scaleX(-1); }
+
   .identified-badge {
     margin-top: 10px;
     padding: 10px 12px;
@@ -584,7 +586,6 @@ function capturePhoto() {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   const ctx = canvas.getContext('2d');
-
   ctx.translate(canvas.width, 0);
   ctx.scale(-1, 1);
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -685,9 +686,13 @@ async function submitPresensi() {
 
     if (data.ok) {
       statusEl.className = 'upload-status success';
-      textEl.textContent = 'Presensi tercatat! ✓';
+      const actionLabel = data.action === 'in' ? 'Clock In' : 'Clock Out';
+      textEl.textContent = `Presensi tercatat sebagai ${actionLabel}! ✓`;
       document.getElementById('step3Badge').classList.add('done');
       document.getElementById('step3Badge').textContent = '✓';
+
+      // Siapkan untuk scan berikutnya (misal: clock out setelah clock in)
+      setTimeout(() => resetForNextScan(), 2500);
     } else {
       throw new Error(data.error || 'Gagal menyimpan');
     }
@@ -696,6 +701,25 @@ async function submitPresensi() {
     textEl.textContent = 'Gagal: ' + e.message;
     btn.disabled = false;
   }
+}
+
+// Reset penuh form supaya tutor bisa langsung clock out di sesi yang sama
+function resetForNextScan() {
+  capturedDataUrl = null;
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('uploadStatus').className = 'upload-status';
+  document.getElementById('btnSubmit').disabled = false;
+  document.getElementById('idleHint').style.display = 'block';
+
+  document.getElementById('btnStartCam').style.display = 'block';
+  document.getElementById('btnCapture').disabled = true;
+  document.getElementById('wmPreview').style.display = 'none';
+  document.getElementById('step2Badge').classList.remove('done');
+  document.getElementById('step2Badge').textContent = '2';
+
+  // Identitas & BAC tetap (tidak perlu scan ulang), tinggal aktifkan kamera lagi
+  document.getElementById('step3Badge').classList.remove('done');
+  document.getElementById('step3Badge').textContent = '3';
 }
 
 loadTutorMap();
