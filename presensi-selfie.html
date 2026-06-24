@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presensi Mandiri Tutor WAA</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3350;
+    --accent: #4f8ef7;
+    --accent-dim: #1e2e50;
+    --green: #22c55e;
+    --green-dim: #14291e;
+    --amber: #f59e0b;
+    --amber-dim: #2a2010;
+    --red: #ef4444;
+    --red-dim: #2a1010;
+    --text: #e8eaf6;
+    --text-muted: #8892b0;
+    --text-dim: #4a5080;
+    --mono: 'Courier New', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+  }
+
+  .logo-dot {
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .logo-text { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+  .logo-sub { font-size: 11px; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; }
+
+  main {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .step-num {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .step-num.done { background: var(--green-dim); color: var(--green); }
+
+  .card-body { padding: 16px; }
+
+  .id-row { display: flex; flex-direction: column; gap: 10px; }
+
+  select, input {
+    width: 100%;
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-family: var(--sans);
+  }
+
+  select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .field-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 4px;
+    display: block;
+  }
+
+  .id-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+
+  .id-tab {
+    flex: 1;
+    padding: 7px;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+  }
+
+  .id-tab.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  #qrReaderSmall {
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+
+  .identified-badge {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--green-dim);
+    border: 1px solid var(--green);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--green);
+    font-weight: 600;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .camera-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3/4;
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  #video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  #canvas { display: none; }
+
+  .watermark-preview {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.55);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1.5;
+    color: #fff;
+    pointer-events: none;
+  }
+
+  .watermark-preview .wm-name { font-weight: 700; font-size: 11px; margin-bottom: 2px; }
+
+  .gps-status {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .gps-status.ok { background: var(--green-dim); color: var(--green); }
+  .gps-status.pending { background: var(--surface2); color: var(--text-muted); }
+  .gps-status.error { background: var(--red-dim); color: var(--red); }
+
+  .gps-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+
+  .camera-controls { margin-top: 12px; display: flex; gap: 8px; }
+
+  .btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-secondary { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-success { background: var(--green); color: #07140d; }
+
+  .result-photo { width: 100%; border-radius: 8px; display: block; }
+
+  .upload-status {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .upload-status.uploading { background: var(--accent-dim); color: var(--accent); display: flex; }
+  .upload-status.success { background: var(--green-dim); color: var(--green); display: flex; }
+  .upload-status.error { background: var(--red-dim); color: var(--red); display: flex; }
+
+  .spinner {
+    width: 12px; height: 12px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .idle-msg {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+    padding: 24px 16px;
+    line-height: 1.6;
+  }
+
+  .disabled-overlay { opacity: 0.4; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-dot"></div>
+  <div>
+    <div class="logo-text">Presensi Mandiri Tutor WAA</div>
+    <div class="logo-sub">Untuk BAC tanpa admin di lokasi</div>
+  </div>
+</header>
+
+<main>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">1. Identitas & Lokasi</span>
+      <div class="step-num" id="step1Badge">1</div>
+    </div>
+    <div class="card-body">
+      <div class="id-row">
+        <div>
+          <label class="field-label">Lokasi BAC</label>
+          <select id="bacSelect">
+            <option value="">Memuat lokasi...</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="field-label">Identifikasi diri</label>
+          <div class="id-tabs">
+            <div class="id-tab active" id="tabScan" onclick="switchIdTab('scan')">Scan QR</div>
+            <div class="id-tab" id="tabManual" onclick="switchIdTab('manual')">Pilih dari Daftar</div>
+          </div>
+
+          <div id="scanPane">
+            <button class="btn btn-secondary" style="width:100%" onclick="startIdScanner()" id="btnStartIdScan">
+              Aktifkan Kamera untuk Scan QR
+            </button>
+            <div id="qrReaderSmall"></div>
+          </div>
+
+          <div id="manualPane" style="display:none">
+            <input type="text" id="nameSearch" placeholder="Cari nama kamu..." oninput="filterNameList()" autocomplete="off">
+            <select id="nameSelect" size="6" style="margin-top:8px" onchange="onNameSelected()">
+              <option value="">— ketik untuk mencari —</option>
+            </select>
+          </div>
+
+          <div class="identified-badge" id="identifiedBadge">
+            ✓ <span id="identifiedName"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="cameraCard">
+    <div class="card-header">
+      <span class="card-title">2. Foto Selfie Presensi</span>
+      <div class="step-num" id="step2Badge">2</div>
+    </div>
+    <div class="card-body disabled-overlay" id="cameraSection">
+      <div class="camera-wrap">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+        <div class="watermark-preview" id="wmPreview" style="display:none">
+          <div class="wm-name" id="wmName">—</div>
+          <div id="wmBac">—</div>
+          <div id="wmTime">—</div>
+          <div id="wmGps">—</div>
+        </div>
+      </div>
+
+      <div class="gps-status pending" id="gpsStatus">
+        <div class="gps-dot"></div>
+        <span id="gpsStatusText">Menunggu izin lokasi...</span>
+      </div>
+
+      <div class="camera-controls">
+        <button class="btn btn-secondary" id="btnStartCam" onclick="startCamera()">Aktifkan Kamera</button>
+        <button class="btn btn-primary" id="btnCapture" onclick="capturePhoto()" disabled>📸 Ambil Foto</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none">
+    <div class="card-header">
+      <span class="card-title">3. Konfirmasi & Kirim</span>
+      <div class="step-num" id="step3Badge">3</div>
+    </div>
+    <div class="card-body">
+      <img id="resultPhoto" class="result-photo" alt="Foto presensi">
+      <div class="camera-controls">
+        <button class="btn btn-secondary" onclick="retakePhoto()">↺ Ulangi</button>
+        <button class="btn btn-success" id="btnSubmit" onclick="submitPresensi()">Kirim Presensi</button>
+      </div>
+      <div class="upload-status" id="uploadStatus">
+        <div class="spinner"></div>
+        <span id="uploadStatusText"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="idle-msg" id="idleHint">
+    Lengkapi identitas, lalu ambil foto selfie untuk mencatat kehadiranmu.
+  </div>
+
+</main>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────────────────
+const TUTOR_MAP_URL = 'https://script.google.com/macros/s/AKfycbxii-MIoNGBDsaf1UzEdiuk_um76Ew8m1qsXPswDp20dmcbFrMOulP2s5Deu94GkeSw2Q/exec';
+const UPLOAD_URL    = 'https://script.google.com/macros/s/AKfycbxii-MIoNGBDsaf1UzEdiuk_um76Ew8m1qsXPswDp20dmcbFrMOulP2s5Deu94GkeSw2Q/exec';
+// ─────────────────────────────────────────────────────────────────────────
+
+let TUTOR_MAP = JSON.parse(localStorage.getItem('waa_tutor_map') || '{}');
+let currentTutorId = null;
+let currentTutorName = null;
+let currentGps = null;
+let idScanner = null;
+let cameraStream = null;
+let capturedDataUrl = null;
+let watchId = null;
+
+async function loadTutorMap() {
+  try {
+    const res  = await fetch(TUTOR_MAP_URL);
+    const data = await res.json();
+    if (data && typeof data === 'object' && !data.error) {
+      TUTOR_MAP = data;
+      localStorage.setItem('waa_tutor_map', JSON.stringify(data));
+    }
+  } catch (e) { console.warn('TutorMap fetch gagal:', e.message); }
+}
+
+async function loadBacList() {
+  try {
+    const res  = await fetch(TUTOR_MAP_URL + '?action=baclist');
+    const data = await res.json();
+    const sel  = document.getElementById('bacSelect');
+    if (Array.isArray(data) && data.length > 0) {
+      sel.innerHTML = '<option value="">— Pilih BAC —</option>'
+        + data.map(b => `<option>${b}</option>`).join('');
+    }
+  } catch (e) {
+    document.getElementById('bacSelect').innerHTML = '<option value="">— Pilih BAC —</option>';
+  }
+}
+
+function switchIdTab(mode) {
+  document.getElementById('tabScan').classList.toggle('active', mode === 'scan');
+  document.getElementById('tabManual').classList.toggle('active', mode === 'manual');
+  document.getElementById('scanPane').style.display = mode === 'scan' ? 'block' : 'none';
+  document.getElementById('manualPane').style.display = mode === 'manual' ? 'block' : 'none';
+  if (mode === 'manual' && idScanner) stopIdScanner();
+}
+
+function startIdScanner() {
+  idScanner = new Html5Qrcode('qrReaderSmall');
+  idScanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: { width: 200, height: 200 } },
+    onIdScanSuccess,
+    () => {}
+  ).then(() => {
+    document.getElementById('btnStartIdScan').style.display = 'none';
+  }).catch(err => alert('Kamera tidak dapat diakses: ' + err));
+}
+
+function stopIdScanner() {
+  if (idScanner) {
+    idScanner.stop().then(() => {
+      document.getElementById('btnStartIdScan').style.display = 'block';
+    }).catch(() => {});
+  }
+}
+
+function onIdScanSuccess(decodedText) {
+  setIdentity(decodedText);
+  stopIdScanner();
+}
+
+function filterNameList() {
+  const query = document.getElementById('nameSearch').value.trim().toLowerCase();
+  const sel = document.getElementById('nameSelect');
+
+  if (!query) {
+    sel.innerHTML = '<option value="">— ketik untuk mencari —</option>';
+    return;
+  }
+
+  const matches = Object.entries(TUTOR_MAP)
+    .filter(([id, nama]) => nama.toLowerCase().includes(query) || id.toLowerCase().includes(query))
+    .slice(0, 50);
+
+  if (matches.length === 0) {
+    sel.innerHTML = '<option value="">Tidak ditemukan</option>';
+    return;
+  }
+
+  sel.innerHTML = matches.map(([id, nama]) => `<option value="${id}">${nama}</option>`).join('');
+}
+
+function onNameSelected() {
+  const sel = document.getElementById('nameSelect');
+  if (sel.value) setIdentity(sel.value);
+  else clearIdentity();
+}
+
+function setIdentity(tutorId) {
+  currentTutorId = tutorId;
+  currentTutorName = TUTOR_MAP[tutorId] || tutorId;
+  document.getElementById('identifiedBadge').style.display = 'flex';
+  document.getElementById('identifiedName').textContent = currentTutorName;
+  document.getElementById('step1Badge').classList.add('done');
+  document.getElementById('step1Badge').textContent = '✓';
+  checkReadyForCamera();
+}
+
+function clearIdentity() {
+  currentTutorId = null;
+  currentTutorName = null;
+  document.getElementById('identifiedBadge').style.display = 'none';
+  document.getElementById('step1Badge').classList.remove('done');
+  document.getElementById('step1Badge').textContent = '1';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('bacSelect').addEventListener('change', checkReadyForCamera);
+});
+
+function checkReadyForCamera() {
+  const bac = document.getElementById('bacSelect').value;
+  const ready = bac && currentTutorId;
+  document.getElementById('cameraSection').classList.toggle('disabled-overlay', !ready);
+}
+
+function startGps() {
+  const statusEl = document.getElementById('gpsStatus');
+  const textEl   = document.getElementById('gpsStatusText');
+
+  if (!navigator.geolocation) {
+    statusEl.className = 'gps-status error';
+    textEl.textContent = 'Geolocation tidak didukung browser ini.';
+    return;
+  }
+
+  watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      currentGps = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: Math.round(pos.coords.accuracy),
+      };
+      statusEl.className = 'gps-status ok';
+      textEl.textContent = `GPS aktif · akurasi ±${currentGps.accuracy}m`;
+      updateWatermarkPreview();
+    },
+    (err) => {
+      statusEl.className = 'gps-status error';
+      textEl.textContent = 'Gagal ambil lokasi: ' + err.message;
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+  );
+}
+
+async function startCamera() {
+  if (!currentTutorId || !document.getElementById('bacSelect').value) {
+    alert('Lengkapi identitas dan pilih BAC dulu.');
+    return;
+  }
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 960 } }
+    });
+    document.getElementById('video').srcObject = cameraStream;
+    document.getElementById('btnStartCam').style.display = 'none';
+    document.getElementById('btnCapture').disabled = false;
+    document.getElementById('wmPreview').style.display = 'block';
+    startGps();
+    updateWatermarkPreview();
+    setInterval(updateWatermarkPreview, 1000);
+  } catch (e) {
+    alert('Kamera tidak dapat diakses: ' + e.message);
+  }
+}
+
+function updateWatermarkPreview() {
+  if (!document.getElementById('wmPreview')) return;
+  const now = new Date();
+  document.getElementById('wmName').textContent = currentTutorName || '—';
+  document.getElementById('wmBac').textContent = document.getElementById('bacSelect').value || '—';
+  document.getElementById('wmTime').textContent = now.toLocaleString('id-ID', { hour12: false });
+  document.getElementById('wmGps').textContent = currentGps
+    ? `${currentGps.lat.toFixed(6)}, ${currentGps.lng.toFixed(6)}`
+    : 'Mencari GPS...';
+}
+
+function capturePhoto() {
+  const video  = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+  const now = new Date();
+  const bac = document.getElementById('bacSelect').value;
+  const padding = 20;
+  const lineHeight = canvas.height * 0.032;
+  const fontSize = canvas.height * 0.026;
+
+  const lines = [
+    currentTutorName,
+    bac,
+    now.toLocaleString('id-ID', { hour12: false }),
+    currentGps ? `${currentGps.lat.toFixed(6)}, ${currentGps.lng.toFixed(6)} (±${currentGps.accuracy}m)` : 'GPS tidak tersedia',
+  ];
+
+  const boxHeight = lineHeight * lines.length + padding * 1.5;
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(0, canvas.height - boxHeight, canvas.width, boxHeight);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.textBaseline = 'top';
+
+  lines.forEach((line, i) => {
+    ctx.font = i === 0 ? `bold ${fontSize * 1.15}px monospace` : `${fontSize}px monospace`;
+    ctx.fillText(line, padding, canvas.height - boxHeight + padding * 0.7 + i * lineHeight);
+  });
+
+  capturedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+  document.getElementById('resultPhoto').src = capturedDataUrl;
+  document.getElementById('resultCard').style.display = 'block';
+  document.getElementById('idleHint').style.display = 'none';
+  document.getElementById('step2Badge').classList.add('done');
+  document.getElementById('step2Badge').textContent = '✓';
+
+  stopCameraStream();
+}
+
+function stopCameraStream() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+  if (watchId) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+}
+
+function retakePhoto() {
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('idleHint').style.display = 'block';
+  document.getElementById('btnStartCam').style.display = 'block';
+  document.getElementById('btnCapture').disabled = true;
+  document.getElementById('wmPreview').style.display = 'none';
+  document.getElementById('step2Badge').classList.remove('done');
+  document.getElementById('step2Badge').textContent = '2';
+  capturedDataUrl = null;
+}
+
+async function submitPresensi() {
+  if (!capturedDataUrl) return;
+
+  const statusEl = document.getElementById('uploadStatus');
+  const textEl   = document.getElementById('uploadStatusText');
+  const btn      = document.getElementById('btnSubmit');
+
+  statusEl.className = 'upload-status uploading';
+  textEl.textContent = 'Mengunggah foto & menyimpan presensi...';
+  btn.disabled = true;
+
+  try {
+    const bac = document.getElementById('bacSelect').value;
+    const now = new Date();
+
+    const payload = {
+      tutorId: currentTutorId,
+      nama: currentTutorName,
+      bac: bac,
+      ts: now.toISOString(),
+      lat: currentGps ? currentGps.lat : '',
+      lng: currentGps ? currentGps.lng : '',
+      accuracy: currentGps ? currentGps.accuracy : '',
+      photoBase64: capturedDataUrl.split(',')[1],
+      mode: 'selfie',
+    };
+
+    const res = await fetch(UPLOAD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (data.ok) {
+      statusEl.className = 'upload-status success';
+      textEl.textContent = 'Presensi tercatat! ✓';
+      document.getElementById('step3Badge').classList.add('done');
+      document.getElementById('step3Badge').textContent = '✓';
+    } else {
+      throw new Error(data.error || 'Gagal menyimpan');
+    }
+  } catch (e) {
+    statusEl.className = 'upload-status error';
+    textEl.textContent = 'Gagal: ' + e.message;
+    btn.disabled = false;
+  }
+}
+
+loadTutorMap();
+loadBacList();
+</script>
+</body>
+</html>
